@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>3D Van Gogh Gallery</title>
+  <script src="three.js"></script>
+  <script src="OrbitControls.js"></script> <!-- Ensure this file is loaded -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <script>
+    // This code creates a scene, camera, and renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Add a directional light
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(0, 1, 1);
+    scene.add(light);
+
+    // Create the floor
+    const floorGeometry = new THREE.PlaneGeometry(10, 10);
+    const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2; // Rotate the floor to be horizontal
+    scene.add(floor);
+
+    // Create the walls
+    const leftWallGeometry = new THREE.PlaneGeometry(10, 5);
+    const rightWallGeometry = new THREE.PlaneGeometry(10, 5);
+    const frontWallGeometry = new THREE.PlaneGeometry(5, 5);
+    const backWallGeometry = new THREE.PlaneGeometry(5, 5);
+
+    const wallMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    const leftWall = new THREE.Mesh(leftWallGeometry, wallMaterial);
+    const rightWall = new THREE.Mesh(rightWallGeometry, wallMaterial);
+    const frontWall = new THREE.Mesh(frontWallGeometry, wallMaterial);
+    const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
+
+    leftWall.position.set(-2.5, 2.5, 0);
+    rightWall.position.set(2.5, 2.5, 0);
+    frontWall.position.set(0, 2.5, -2.5);
+    backWall.position.set(0, 2.5, 2.5);
+
+    leftWall.rotation.y = Math.PI / 2;
+    rightWall.rotation.y = -Math.PI / 2;
+    frontWall.rotation.y = Math.PI;
+
+    scene.add(leftWall, rightWall, frontWall, backWall);
+
+    // Load and place paintings
+    const loadTexture = (filename) => {
+      return new Promise((resolve, reject) => {
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load(filename, resolve, undefined, reject);
+      });
+    };
+
+    const paintingTextureFilenames = [
+      'img/Almond_Blossom_(1890).jpeg', 
+      'img/Café Terrace at Night (1888).JPG', 
+      // Add other images...
+    ];
+
+    const paintingWidth = 2;
+    const paintingHeight = 2.5;
+
+    const createPaintingMesh = (texture) => {
+      return new THREE.Mesh(new THREE.PlaneGeometry(paintingWidth, paintingHeight), new THREE.MeshBasicMaterial({ map: texture }));
+    };
+
+    Promise.all(paintingTextureFilenames.map(loadTexture))
+      .then((textures) => {
+        const paintings = textures.map(createPaintingMesh);
+
+        // Position the paintings on the walls (adjust positions as needed)
+        const wallSpacing = 1.5;
+        for (let i = 0; i < paintings.length; i++) {
+          const row = Math.floor(i / 4);
+          const col = i % 4;
+          paintings[i].position.set(
+            -wallSpacing * (4 - col - 1) + 2.5, // X position
+            3, // Y position
+            -wallSpacing * row + 2.5 // Z position
+          );
+          scene.add(paintings[i]);
+        }
+
+        // Add interaction using raycaster (instead of addEventListener)
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function onMouseMove(event) {
+          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+           
+          paintings.forEach((painting, index) => {
+  painting.addEventListener('mouseover', () => {
+    popupContainer.classList.add('show');
+    popupContainer.innerHTML = `<h2>${paintingTextureFilenames[index]}</h2><p>Your painting description here.</p>`;
+  });
+
+  painting.addEventListener('mouseout', () => {
+    popupContainer.classList.remove('show');
+  });
+});
+
+
+        // Add event listeners for mouse hover and click
+paintings.forEach((painting, index) => {
+  painting.addEventListener('mouseover', () => {
+    popupContainer.classList.add('show');  // Show popup with smooth animation
+    popupContainer.innerHTML = `<h2>${paintingTextureFilenames[index]}</h2><p>Your painting description here.</p>`;
+  });
+
+  painting.addEventListener('mouseout', () => {
+    popupContainer.classList.remove('show');  // Hide popup smoothly
+  });
+});
+
+
+
+
+
+          raycaster.setFromCamera(mouse, camera);
+
+          const intersects = raycaster.intersectObjects(paintings);
+          if (intersects.length > 0) {
+            const painting = intersects[0].object;
+            popupContainer.style.display = 'block';
+            popupContainer.innerHTML = `<h2>${paintingTextureFilenames[paintings.indexOf(painting)]}</h2><p>Your painting description here.</p>`;
+          } else {
+            popupContainer.style.display = 'none';
+          }
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+
+      })
+      .catch((error) => {
+        console.error('Error loading textures:', error);
+      });
+
+    // Add user interaction with controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableZoom = true;
+    controls.enableRotate = true;
+
+    // Create a popup for painting info
+    const popupContainer = document.createElement('div');
+    popupContainer.classList.add('popup');
+    popupContainer.style.display = 'none';
+    document.body.appendChild(popupContainer);
+
+    // Render loop
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
