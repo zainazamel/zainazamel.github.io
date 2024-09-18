@@ -1,161 +1,450 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>3D Van Gogh Gallery</title>
-  <script src="three.js"></script>
-  <script src="OrbitControls.js"></script> <!-- Ensure this file is loaded -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="Three.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <script>
-    // This code creates a scene, camera, and renderer
+    // Create a scene, camera, and renderer
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+    scene.add(camera);
+    camera.position.z = 5;
+    const renderer = new THREE.WebGLRenderer({antialias:true});//for smooth edges
     renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    document.body.appendChild(renderer.domElement);//add renderer to html
+    
+//let there be light
+//ambient light
+let ambientLight = new THREE.AmbientLight(0x101010,1.0);
+ambientLight.position = camera.position;//light follows camera
+ scene.add(ambientLight);
+ 
+ //direct light
+ let sunlight = new THREE.DirectionalLight(0xddddd,1.0);//color, intensity
+sunlight.position.y = 15;
+scene.add(sunlight);
+
+ let geometry = new THREE.BoxGeometry(1,1,1); //BoxGeometry is teh shape of the object
+let material = new THREE.MeshBasicMaterial({ color: 0xffffff});//color of the object
+let mesh = new THREE.Mesh(geometry, material);
+
+
+//render
+renderer.render(scene,camera);
+
+
+// ... (existing code)
+
+// Adjust camera movement based on direction
+const speed = 0.05;
+
+// Add movement function
+function moveCamera(directionVector) {
+  const cameraDirection = new THREE.Vector3();
+  camera.getWorldDirection(cameraDirection);
+  
+  camera.position.add(directionVector);
+}
+
+// Handle keydown event for movement
+document.addEventListener('keydown', (event) => {
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  
+  const right = new THREE.Vector3();
+  right.crossVectors(camera.up, forward).normalize();
+  
+  switch (event.key) {
+    //case 'ًًw':
+    case 'ArrowUp': 
+    case 'ًًW':
+      // Move forward relative to the camera's direction
+      forward.multiplyScalar(speed);
+      moveCamera(forward);
+      break;
+    case 'S':
+    case 'ArrowDown':
+      // Move backward relative to the camera's direction
+      forward.multiplyScalar(-speed);
+      moveCamera(forward);
+      break;
+    
+    case 'D':
+    case 'ArrowRight':
+      // Move left relative to the camera's direction
+      right.multiplyScalar(-speed);
+      moveCamera(right);
+      break;
+      case 'A':
+      case 'ArrowLeft':
+      // Move right relative to the camera's direction
+      right.multiplyScalar(speed);
+      moveCamera(right);
+      break;
+  }
+});
+
+
+
+
+const boxMinX = -5; // Minimum X position (left wall)
+const boxMaxX = 5;   // Maximum X position (right wall)
+const boxMinY = 0.1;  // Minimum Y position (a bit above floor)
+const boxMaxY = 2.5;    // Maximum Y position (a bit below ceiling)
+const boxMinZ = -5;  // Minimum Z position (back wall)
+const boxMaxZ = 5;   // Maximum Z position (front wall)
+
+function moveCamera(directionVector) {
+  const cameraDirection = new THREE.Vector3();
+  camera.getWorldDirection(cameraDirection);
+  
+// Project the direction vector onto the XZ plane to restrict movement to horizontal directions
+  const horizontalDirection = new THREE.Vector3(directionVector.x, 0, directionVector.z);
+  const newPosition = camera.position.clone().add(horizontalDirection);
+
+  // Check new position against boundaries
+  newPosition.x = Math.max(boxMinX, Math.min(boxMaxX, newPosition.x));
+  newPosition.z = Math.max(boxMinZ, Math.min(boxMaxZ, newPosition.z));
+
+  camera.position.copy(newPosition);  // Update camera position with clamped values
+}
+
+
+
+
+
+
+
+
+
+
+// ... (rest of your code)
+
+
+
+    // Position the camera
+    camera.position.z = 5;
+
+    //Adjust the near and far clipping planes of the camera
+    camera.near = 0.1;
+    camera.far = 1000;
+
+    //lighting is sufficient to illuminate the scene
+    //const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Add ambient light
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+//directionalLight.position.set(5, 10, 7.5);
+directionalLight.position.set(0, 1, 1);
+scene.add(directionalLight);
+
 
     // Add a directional light
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(0, 1, 1);
     scene.add(light);
 
+    
+
+
+
     // Create the floor
-    const floorGeometry = new THREE.PlaneGeometry(10, 10);
-    const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2; // Rotate the floor to be horizontal
-    scene.add(floor);
+    //const floorGeometry = new THREE.PlaneGeometry(10, 10);
+    //const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x808080 });
+    //const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    //floor.rotation.x = -Math.PI / 2; // Rotate the floor to be horizontal
+    //scene.add(floor);
+
+
+
+    
+
+
+
+    // Load the texture
+const loader = new THREE.TextureLoader();
+const floorTexture = loader.load('img/Floor.jpg');
+//const floorTexture = url(img/Floor.jpg);
+
+
+// Repeat the texture if necessary
+floorTexture.wrapS = THREE.RepeatWrapping;
+floorTexture.wrapT = THREE.RepeatWrapping;
+floorTexture.repeat.set(4, 4); // Adjust for repetition
+
+// Create the material with the texture
+//const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
+
+//setting these properties to white to ensure the texture is visible
+//const floorMaterial = new THREE.MeshStandardMaterial({
+  const floorMaterial = new THREE.MeshBasicMaterial({
+    map: floorTexture,
+    color: 0xffffff,
+    emissive: 0xffffff
+});
+
+
+
+// Create the geometry for the floor
+const floorGeometry = new THREE.PlaneGeometry(15, 15); // Adjust size as needed
+
+// Create the mesh
+const floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+
+// Rotate to make it horizontal
+floorMesh.rotation.x = -Math.PI / 2; // Rotate to lie flat
+floorMesh.position.y = 0; // Place at ground level
+
+// Add to the scene
+scene.add(floorMesh);
+
+
+// HemisphereLight (soft lighting from sky and ground)
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1); // skyColor, groundColor, intensity
+hemiLight.position.set(0, 5, 0);
+scene.add(hemiLight);
+
+// PointLight (additional light source)
+const pointLight = new THREE.PointLight(0xffffff, 1);
+pointLight.position.set(5, 5, 5); // Position the light at the top corner of the room
+scene.add(pointLight);
+
+// Create ceiling geometry (same size as the floor)
+const ceilingGeometry = new THREE.PlaneGeometry(15, 15); // Matches the floor size
+
+// Load the ceiling texture
+const ceilingTexture = loader.load('img/ceiling.png'); // Replace with your ceiling image file path
+ceilingTexture.wrapS = THREE.RepeatWrapping;
+ceilingTexture.wrapT = THREE.RepeatWrapping;
+
+// Create the ceiling material with the texture
+const ceilingMaterial = new THREE.MeshBasicMaterial({ map: ceilingTexture });
+
+// Create the ceiling mesh
+const ceilingMesh = new THREE.Mesh(ceilingGeometry, ceilingMaterial);
+
+// Position the ceiling above the room at height 5 and rotate to face downward
+ceilingMesh.rotation.x = Math.PI / 2; // Rotate to face down
+ceilingMesh.position.y = 5; // Same height as the top of the walls
+
+// Add ceiling to the scene
+scene.add(ceilingMesh);
+
+
+
+
+
 
     // Create the walls
-    const leftWallGeometry = new THREE.PlaneGeometry(10, 5);
-    const rightWallGeometry = new THREE.PlaneGeometry(10, 5);
-    const frontWallGeometry = new THREE.PlaneGeometry(5, 5);
-    const backWallGeometry = new THREE.PlaneGeometry(5, 5);
+const wallMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+const walls = [
+  // Left wall (X = -roomWidth / 2)
+  { geometry: new THREE.PlaneGeometry(15, 10), position: [-7.5, 5, 0], rotation: [0, Math.PI / 2, 0] },
+  
+  // Right wall (X = roomWidth / 2)
+  { geometry: new THREE.PlaneGeometry(15, 10), position: [7.5, 5, 0], rotation: [0, -Math.PI / 2, 0] },
+  
+  // Back wall (Z = -roomDepth / 2)
+  { geometry: new THREE.PlaneGeometry(15, 10), position: [0, 5, -7.5], rotation: [0, Math.PI, 0] },
+  
+  // Front wall (Z = roomDepth / 2)
+  { geometry: new THREE.PlaneGeometry(15, 10), position: [0, 5, 7.5], rotation: [0, 0, 0] },
+];
 
-    const wallMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+// Add the walls to the scene
+walls.forEach(wall => {
+  const wallMesh = new THREE.Mesh(wall.geometry, wallMaterial);
+  wallMesh.position.set(...wall.position);
+  wallMesh.rotation.set(...wall.rotation);
+  scene.add(wallMesh);
+});
 
-    const leftWall = new THREE.Mesh(leftWallGeometry, wallMaterial);
-    const rightWall = new THREE.Mesh(rightWallGeometry, wallMaterial);
-    const frontWall = new THREE.Mesh(frontWallGeometry, wallMaterial);
-    const backWall = new THREE.Mesh(backWallGeometry, wallMaterial);
+    // walls.forEach(({ geometry, position, rotation }) => {
+    //   const wall = new THREE.Mesh(geometry, wallMaterial);
+    //   wall.position.set(...position);
+    //   wall.rotation.set(...rotation);
+    //   scene.add(wall);
+    // });
 
-    leftWall.position.set(-2.5, 2.5, 0);
-    rightWall.position.set(2.5, 2.5, 0);
-    frontWall.position.set(0, 2.5, -2.5);
-    backWall.position.set(0, 2.5, 2.5);
-
-    leftWall.rotation.y = Math.PI / 2;
-    rightWall.rotation.y = -Math.PI / 2;
-    frontWall.rotation.y = Math.PI;
-
-    scene.add(leftWall, rightWall, frontWall, backWall);
-
+ 
     // Load and place paintings
-    const loadTexture = (filename) => {
-      return new Promise((resolve, reject) => {
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load(filename, resolve, undefined, reject);
-      });
-    };
+const loadTexture = (filename) => {
+  return new Promise((resolve, reject) => {
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load(filename, resolve, undefined, (error) => {
+      console.error('Error loading texture:', filename, error);
+      reject(error);
+    });
+  });
+};
 
-    const paintingTextureFilenames = [
-      'img/Almond_Blossom_(1890).jpeg', 
-      'img/Café Terrace at Night (1888).JPG', 
-      // Add other images...
-    ];
+const paintingTextureFilenames = [
+  'img/almond_blossom.jpeg',
+  'img/cafe_terrace_at_night.JPG',
+  'img/self-portrait_with_bandaged_ear.jpg',
+  'img/starry_night.jpg',
+  'img/sunflowers.jpg',
+  'img/the_bedroom.jpg',
+  'img/the_church_at_auvers.jpeg',
+  'img/the_garden_of_the_asylum.jpeg',
+  'img/the_irises.jpeg',
+  'img/the_night_cafe.jpeg',
+  'img/the_olive_trees.jpeg',
+  'img/the_postman.jpg',
+  'img/the_potato_eaters.jpeg',
+  'img/the_red_vineyard.jpeg',
+  'img/the_yellow_house.jpeg',
+  'img/wheat_field_with_cypresses.jpeg',
+];
 
-    const paintingWidth = 2;
-    const paintingHeight = 2.5;
+// Define the room size and spacing variables
+const roomWidth = 15;  // X-axis dimension
+const roomHeight = 10;  // Y-axis dimension
+const roomDepth = 15;  // Z-axis dimension
+const paintingWidth = 2;  // Painting width (X-axis)
+const paintingHeight = 2.5;  // Painting height (Y-axis)
+const paintingGap = 0.5;  // Space between paintings
 
-    const createPaintingMesh = (texture) => {
-      return new THREE.Mesh(new THREE.PlaneGeometry(paintingWidth, paintingHeight), new THREE.MeshBasicMaterial({ map: texture }));
-    };
+// Effective painting space on walls
+const wallEffectiveWidth = roomWidth - 2 * paintingGap;  // Available width for paintings on X-axis walls
+const wallEffectiveHeight = roomDepth - 2 * paintingGap;  // Available height for paintings on Z-axis walls
 
-    Promise.all(paintingTextureFilenames.map(loadTexture))
-      .then((textures) => {
-        const paintings = textures.map(createPaintingMesh);
+// Calculate positions to evenly space paintings with gaps
+const horizontalSpacing = (wallEffectiveWidth - 4 * paintingWidth) / 3;  // Gap between paintings on X-axis walls
+const verticalSpacing = (wallEffectiveHeight - 4 * paintingWidth) / 3;  // Gap between paintings on Z-axis walls
 
-        // Position the paintings on the walls (adjust positions as needed)
-        const wallSpacing = 1.5;
-        for (let i = 0; i < paintings.length; i++) {
-          const row = Math.floor(i / 4);
-          const col = i % 4;
-          paintings[i].position.set(
-            -wallSpacing * (4 - col - 1) + 2.5, // X position
-            3, // Y position
-            -wallSpacing * row + 2.5 // Z position
-          );
-          scene.add(paintings[i]);
-        }
+// Define the positions and rotations for the paintings
+const positions = [
+  // Back wall (Z = -roomDepth / 2, paintings spread across the X-axis)
+  { pos: [-roomWidth / 2 + paintingGap + paintingWidth / 2, 2.5, -roomDepth / 2 + 0.01], rotation: [0, 0, 0] },
+  { pos: [-roomWidth / 2 + paintingGap + paintingWidth + horizontalSpacing + paintingWidth / 2, 2.5, -roomDepth / 2 + 0.01], rotation: [0, 0, 0] },
+  { pos: [-roomWidth / 2 + paintingGap + 2 * (paintingWidth + horizontalSpacing) + paintingWidth / 2, 2.5, -roomDepth / 2 + 0.01], rotation: [0, 0, 0] },
+  { pos: [-roomWidth / 2 + paintingGap + 3 * (paintingWidth + horizontalSpacing) + paintingWidth / 2, 2.5, -roomDepth / 2 + 0.01], rotation: [0, 0, 0] },
 
-        // Add interaction using raycaster (instead of addEventListener)
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
+  // Left wall (X = -roomWidth / 2, paintings spread across the Z-axis)
+  { pos: [-roomWidth / 2 + 0.01, 2.5, -roomDepth / 2 + paintingGap + paintingWidth / 2], rotation: [0, Math.PI / 2, 0] },
+  { pos: [-roomWidth / 2 + 0.01, 2.5, -roomDepth / 2 + paintingGap + paintingWidth + verticalSpacing + paintingWidth / 2], rotation: [0, Math.PI / 2, 0] },
+  { pos: [-roomWidth / 2 + 0.01, 2.5, -roomDepth / 2 + paintingGap + 2 * (paintingWidth + verticalSpacing) + paintingWidth / 2], rotation: [0, Math.PI / 2, 0] },
+  { pos: [-roomWidth / 2 + 0.01, 2.5, -roomDepth / 2 + paintingGap + 3 * (paintingWidth + verticalSpacing) + paintingWidth / 2], rotation: [0, Math.PI / 2, 0] },
 
-        function onMouseMove(event) {
-          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  // Front wall (Z = roomDepth / 2, paintings spread across the X-axis)
+  { pos: [-roomWidth / 2 + paintingGap + paintingWidth / 2, 2.5, roomDepth / 2 - 0.01], rotation: [0, Math.PI, 0] },
+  { pos: [-roomWidth / 2 + paintingGap + paintingWidth + horizontalSpacing + paintingWidth / 2, 2.5, roomDepth / 2 - 0.01], rotation: [0, Math.PI, 0] },
+  { pos: [-roomWidth / 2 + paintingGap + 2 * (paintingWidth + horizontalSpacing) + paintingWidth / 2, 2.5, roomDepth / 2 - 0.01], rotation: [0, Math.PI, 0] },
+  { pos: [-roomWidth / 2 + paintingGap + 3 * (paintingWidth + horizontalSpacing) + paintingWidth / 2, 2.5, roomDepth / 2 - 0.01], rotation: [0, Math.PI, 0] },
+
+  // Right wall (X = roomWidth / 2, paintings spread across the Z-axis)
+  { pos: [roomWidth / 2 - 0.01, 2.5, -roomDepth / 2 + paintingGap + paintingWidth / 2], rotation: [0, -Math.PI / 2, 0] },
+  { pos: [roomWidth / 2 - 0.01, 2.5, -roomDepth / 2 + paintingGap + paintingWidth + verticalSpacing + paintingWidth / 2], rotation: [0, -Math.PI / 2, 0] },
+  { pos: [roomWidth / 2 - 0.01, 2.5, -roomDepth / 2 + paintingGap + 2 * (paintingWidth + verticalSpacing) + paintingWidth / 2], rotation: [0, -Math.PI / 2, 0] },
+  { pos: [roomWidth / 2 - 0.01, 2.5, -roomDepth / 2 + paintingGap + 3 * (paintingWidth + verticalSpacing) + paintingWidth / 2], rotation: [0, -Math.PI / 2, 0] },
+];
+
+const createPaintingMesh = (texture) => {
+  return new THREE.Mesh(
+    new THREE.PlaneGeometry(paintingWidth, paintingHeight),  // Adjust geometry if needed
+    new THREE.MeshStandardMaterial({ map: texture })
+  );
+};
+
+const paintings = [];
+
+Promise.all(paintingTextureFilenames.map(loadTexture))
+  .then((textures) => {
+    textures.forEach((texture, index) => {
+      const painting = createPaintingMesh(texture);
+
+      // Assign positions and rotations to the painting
+      painting.position.set(...positions[index].pos);
+      painting.rotation.set(...positions[index].rotation);
+
+      // Add the painting to the scene and to the paintings array
+      paintings.push(painting);
+      scene.add(painting);
+    });
+
+    // Add interaction using raycaster
+    setupEventListeners(paintings);
+  })
+  .catch((error) => {
+    console.error('Error loading textures:', error);
+  });
+
+// Add user interaction with controls
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableZoom = true;
+controls.enableRotate = true;
+
+// Render loop
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+}
+
+animate();
+
+
+
+
+
+// // Now apply these positions to your paintings
+// for (let i = 0; i < paintings.length; i++) {
+//   paintings[i].position.set(positions[i][0], positions[i][1], positions[i][2]);
+//   scene.add(paintings[i]);
+// }
+
+
+// // Generate positions for each wall
+// generatePositions(-5, 0, false);  // Left Wall (x = -5, z varies)
+// generatePositions(5, 0, false);   // Right Wall (x = 5, z varies)
+// generatePositions(0, -5, true);   // Front Wall (z = -5, x varies)
+// generatePositions(0, 5, true);    // Back Wall (z = 5, x varies)
+
+// console.log(positions);
 
            
-          paintings.forEach((painting, index) => {
-  painting.addEventListener('mouseover', () => {
-    popupContainer.classList.add('show');
-    popupContainer.innerHTML = `<h2>${paintingTextureFilenames[index]}</h2><p>Your painting description here.</p>`;
-  });
 
-  painting.addEventListener('mouseout', () => {
-    popupContainer.classList.remove('show');
-  });
-});
+        
 
+    
 
-        // Add event listeners for mouse hover and click
-paintings.forEach((painting, index) => {
-  painting.addEventListener('mouseover', () => {
-    popupContainer.classList.add('show');  // Show popup with smooth animation
-    popupContainer.innerHTML = `<h2>${paintingTextureFilenames[index]}</h2><p>Your painting description here.</p>`;
-  });
-
-  painting.addEventListener('mouseout', () => {
-    popupContainer.classList.remove('show');  // Hide popup smoothly
-  });
-});
-
-
-
-
-
-          raycaster.setFromCamera(mouse, camera);
-
-          const intersects = raycaster.intersectObjects(paintings);
-          if (intersects.length > 0) {
-            const painting = intersects[0].object;
-            popupContainer.style.display = 'block';
-            popupContainer.innerHTML = `<h2>${paintingTextureFilenames[paintings.indexOf(painting)]}</h2><p>Your painting description here.</p>`;
-          } else {
-            popupContainer.style.display = 'none';
-          }
-        }
-
-        window.addEventListener('mousemove', onMouseMove);
-
-      })
-      .catch((error) => {
-        console.error('Error loading textures:', error);
-      });
-
-    // Add user interaction with controls
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = true;
-    controls.enableRotate = true;
-
-    // Create a popup for painting info
+    // Create popup element and attach it to the body
     const popupContainer = document.createElement('div');
     popupContainer.classList.add('popup');
-    popupContainer.style.display = 'none';
     document.body.appendChild(popupContainer);
 
+    // Function to set up event listeners
+    function setupEventListeners(paintings) {
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+
+      function onMouseMove(event) {
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(paintings);
+        if (intersects.length > 0) {
+          const painting = intersects[0].object;
+          popupContainer.style.display = 'block';
+          //popupContainer.style.top = ${event.clientY + 20}px;
+          //popupContainer.style.left = ${event.clientX + 20}px;
+          //popupContainer.innerHTML = <h2>${paintingTextureFilenames[paintings.indexOf(painting)]}</h2><p>Your painting description here.</p>;
+        } else {
+          popupContainer.style.display = 'none';
+        }
+      }
+      window.addEventListener('mousemove', onMouseMove);
+    }
+    //renderer's background
+    renderer.setClearColor(0xeeeeee); // Light grey background color
     // Render loop
     function animate() {
       requestAnimationFrame(animate);
